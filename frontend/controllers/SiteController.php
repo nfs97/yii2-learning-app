@@ -6,6 +6,7 @@ use frontend\models\ContactForm;
 use frontend\models\PasswordResetRequestForm;
 use frontend\models\ResetPasswordForm;
 use frontend\models\SignupForm;
+use frontend\models\UserForm;
 use Yii;
 use yii\base\InvalidParamException;
 use yii\filters\AccessControl;
@@ -217,5 +218,15 @@ class SiteController extends Controller
         return $this->render('hello', [
             'test' => $test,
         ]);
+    }
+
+    public function actionUserForm()
+    {
+        $model = new UserForm();
+
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            Yii::$app->session->setFlash('success', "You have entered data correctly");
+        }
+        return $this->render('userForm', ['model' => $model]);
     }
 }
