@@ -2,12 +2,13 @@
 
 namespace frontend\controllers;
 
-use Yii;
 use frontend\models\Branch;
 use frontend\models\BranchSearch;
-use yii\web\Controller;
-use yii\web\NotFoundHttpException;
+use Yii;
 use yii\filters\VerbFilter;
+use yii\web\Controller;
+use yii\web\ForbiddenHttpException;
+use yii\web\NotFoundHttpException;
 
 /**
  * BranchController implements the CRUD actions for Branch model.
@@ -57,23 +58,45 @@ class BranchController extends Controller
     }
 
     /**
+     * Finds the Branch model based on its primary key value.
+     * If the model is not found, a 404 HTTP exception will be thrown.
+     * @param integer $id
+     * @return Branch the loaded model
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    protected function findModel($id)
+    {
+        if (($model = Branch::findOne($id)) !== null) {
+            return $model;
+        } else {
+            throw new NotFoundHttpException('The requested page does not exist.');
+        }
+    }
+
+    /**
      * Creates a new Branch model.
      * If creation is successful, the browser will be redirected to the 'view' page.
      * @return mixed
+     * @throws ForbiddenHttpException
      */
     public function actionCreate()
     {
-        $model = new Branch();
+        if (Yii::$app->user->can('create-branch')) {
+            $model = new Branch();
 
-        if ($model->load(Yii::$app->request->post())) {
-            $model->branch_create_date = date('Y-m-d h:m:s');
-            $model->save();
-            return $this->redirect(['view', 'id' => $model->branch_id]);
+            if ($model->load(Yii::$app->request->post())) {
+                $model->branch_create_date = date('Y-m-d h:m:s');
+                $model->save();
+                return $this->redirect(['view', 'id' => $model->branch_id]);
+            } else {
+                return $this->render('create', [
+                    'model' => $model,
+                ]);
+            }
         } else {
-            return $this->render('create', [
-                'model' => $model,
-            ]);
+            throw new ForbiddenHttpException('You are not allowed to create branches');
         }
+
     }
 
     /**
@@ -106,21 +129,5 @@ class BranchController extends Controller
         $this->findModel($id)->delete();
 
         return $this->redirect(['index']);
-    }
-
-    /**
-     * Finds the Branch model based on its primary key value.
-     * If the model is not found, a 404 HTTP exception will be thrown.
-     * @param integer $id
-     * @return Branch the loaded model
-     * @throws NotFoundHttpException if the model cannot be found
-     */
-    protected function findModel($id)
-    {
-        if (($model = Branch::findOne($id)) !== null) {
-            return $model;
-        } else {
-            throw new NotFoundHttpException('The requested page does not exist.');
-        }
     }
 }

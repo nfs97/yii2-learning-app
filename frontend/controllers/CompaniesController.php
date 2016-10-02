@@ -2,12 +2,13 @@
 
 namespace frontend\controllers;
 
-use Yii;
 use frontend\models\Companies;
 use frontend\models\CompaniesSearch;
-use yii\web\Controller;
-use yii\web\NotFoundHttpException;
+use Yii;
 use yii\filters\VerbFilter;
+use yii\web\Controller;
+use yii\web\ForbiddenHttpException;
+use yii\web\NotFoundHttpException;
 use yii\web\UploadedFile;
 
 /**
@@ -58,32 +59,54 @@ class CompaniesController extends Controller
     }
 
     /**
+     * Finds the Companies model based on its primary key value.
+     * If the model is not found, a 404 HTTP exception will be thrown.
+     * @param integer $id
+     * @return Companies the loaded model
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    protected function findModel($id)
+    {
+        if (($model = Companies::findOne($id)) !== null) {
+            return $model;
+        } else {
+            throw new NotFoundHttpException('The requested page does not exist.');
+        }
+    }
+
+    /**
      * Creates a new Companies model.
      * If creation is successful, the browser will be redirected to the 'view' page.
      * @return mixed
+     * @throws ForbiddenHttpException
      */
     public function actionCreate()
     {
-        $model = new Companies();
+        if (Yii::$app->user->can('create-company')) {
+            $model = new Companies();
 
-        if ($model->load(Yii::$app->request->post())) {
+            if ($model->load(Yii::$app->request->post())) {
 
-            //get the image
-            $imageName = $model->company_name;
-            $model->file = UploadedFile::getInstance($model, 'file');
-            $model->file->saveAs('uploads/'.$imageName.'.'.$model->file->extension);
+                //get the image
+                $imageName = $model->company_name;
+                $model->file = UploadedFile::getInstance($model, 'file');
+                $model->file->saveAs('uploads/' . $imageName . '.' . $model->file->extension);
 
-            //save the path of image in DB
-            $model->logo = 'uploads/'.$imageName.'.'.$model->file->extension;
+                //save the path of image in DB
+                $model->logo = 'uploads/' . $imageName . '.' . $model->file->extension;
 
-            $model->comany_created_date = date('Y-m-d h:m:s');
-            $model->save();
-            return $this->redirect(['view', 'id' => $model->company_id]);
+                $model->comany_created_date = date('Y-m-d h:m:s');
+                $model->save();
+                return $this->redirect(['view', 'id' => $model->company_id]);
+            } else {
+                return $this->render('create', [
+                    'model' => $model,
+                ]);
+            }
         } else {
-            return $this->render('create', [
-                'model' => $model,
-            ]);
+            throw new ForbiddenHttpException('You are not allowed to create company');
         }
+
     }
 
     /**
@@ -116,21 +139,5 @@ class CompaniesController extends Controller
         $this->findModel($id)->delete();
 
         return $this->redirect(['index']);
-    }
-
-    /**
-     * Finds the Companies model based on its primary key value.
-     * If the model is not found, a 404 HTTP exception will be thrown.
-     * @param integer $id
-     * @return Companies the loaded model
-     * @throws NotFoundHttpException if the model cannot be found
-     */
-    protected function findModel($id)
-    {
-        if (($model = Companies::findOne($id)) !== null) {
-            return $model;
-        } else {
-            throw new NotFoundHttpException('The requested page does not exist.');
-        }
     }
 }
