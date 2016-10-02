@@ -12,11 +12,18 @@ use yii\db\ActiveRecord;
  * @property string $company_name
  * @property string $company_email
  * @property string $company_address
+ * @property string $logo
  * @property string $comany_created_date
  * @property string $company_status
  */
 class Companies extends ActiveRecord
 {
+
+    /**
+     * @inheritdoc
+     */
+    public $file;
+
     /**
      * @inheritdoc
      */
@@ -34,7 +41,8 @@ class Companies extends ActiveRecord
             [['company_name', 'company_email', 'company_address', 'company_status'], 'required'],
             [['comany_created_date'], 'safe'],
             [['company_status'], 'string'],
-            [['company_name', 'company_email'], 'string', 'max' => 100],
+            [['file'], 'file'],
+            [['company_name', 'logo', 'company_email'], 'string', 'max' => 100],
             [['company_address'], 'string', 'max' => 255],
         ];
     }
@@ -51,6 +59,7 @@ class Companies extends ActiveRecord
             'company_address' => 'Company Address',
             'comany_created_date' => 'Comany Created Date',
             'company_status' => 'Company Status',
+            'file' => 'logo',
         ];
     }
 }

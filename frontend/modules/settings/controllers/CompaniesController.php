@@ -66,6 +66,7 @@ class CompaniesController extends Controller
         $model = new Companies();
 
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
+
             return $this->redirect(['view', 'id' => $model->company_id]);
         } else {
             return $this->render('create', [
