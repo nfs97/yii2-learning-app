@@ -1,19 +1,19 @@
 <?php
 
-namespace frontend\controllers;
+namespace frontend\modules\settings\controllers;
 
-use frontend\models\Branch;
-use frontend\models\BranchSearch;
+use frontend\modules\settings\models\Email;
+use frontend\modules\settings\models\EmailSearch;
 use Yii;
 use yii\filters\VerbFilter;
 use yii\web\Controller;
-use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
+use yii\web\UploadedFile;
 
 /**
- * BranchController implements the CRUD actions for Branch model.
+ * EmailController implements the CRUD actions for Email model.
  */
-class BranchController extends Controller
+class EmailController extends Controller
 {
     /**
      * @inheritdoc
@@ -31,12 +31,12 @@ class BranchController extends Controller
     }
 
     /**
-     * Lists all Branch models.
+     * Lists all Email models.
      * @return mixed
      */
     public function actionIndex()
     {
-        $searchModel = new BranchSearch();
+        $searchModel = new EmailSearch();
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
         return $this->render('index', [
@@ -46,7 +46,7 @@ class BranchController extends Controller
     }
 
     /**
-     * Displays a single Branch model.
+     * Displays a single Email model.
      * @param integer $id
      * @return mixed
      */
@@ -58,15 +58,15 @@ class BranchController extends Controller
     }
 
     /**
-     * Finds the Branch model based on its primary key value.
+     * Finds the Email model based on its primary key value.
      * If the model is not found, a 404 HTTP exception will be thrown.
      * @param integer $id
-     * @return Branch the loaded model
+     * @return Email the loaded model
      * @throws NotFoundHttpException if the model cannot be found
      */
     protected function findModel($id)
     {
-        if (($model = Branch::findOne($id)) !== null) {
+        if (($model = Email::findOne($id)) !== null) {
             return $model;
         } else {
             throw new NotFoundHttpException('The requested page does not exist.');
@@ -74,33 +74,51 @@ class BranchController extends Controller
     }
 
     /**
-     * Creates a new Branch model.
+     * Creates a new Email model.
      * If creation is successful, the browser will be redirected to the 'view' page.
      * @return mixed
-     * @throws ForbiddenHttpException
      */
     public function actionCreate()
     {
-        if (Yii::$app->user->can('create-branch')) {
-            $model = new Branch();
+        $model = new Email();
 
-            if ($model->load(Yii::$app->request->post())) {
-                $model->branch_create_date = date('Y-m-d h:m:s');
-                $model->save();
-                return $this->redirect(['view', 'id' => $model->branch_id]);
-            } else {
-                return $this->render('create', [
-                    'model' => $model,
-                ]);
+        if ($model->load(Yii::$app->request->post())) {
+
+            $model->attachment = UploadedFile::getInstance($model, 'attachment');
+
+            if ($model->attachment) {
+                $time = time();
+                $model->attachment->saveAs('attachments/' . $time . '.' . $model->attachment->extension);
+                $model->attachment = 'attachments/' . $time . '.' . $model->attachment->extension;
             }
-        } else {
-            throw new ForbiddenHttpException('You are not allowed to create branches');
-        }
+            if ($model->attachment) {
+                Yii::$app->mailer->compose()
+                    ->setFrom(['some@myemail.com' => 'some My name'])
+                    ->setTo($model->receiver_email)
+                    ->setSubject($model->subject)
+                    ->setHtmlBody($model->content)
+                    ->attach($model->attachment)
+                    ->send();
+            } else {
+                Yii::$app->mailer->compose()
+                    ->setFrom(['some@myemail.com' => 'some My name'])
+                    ->setTo($model->receiver_email)
+                    ->setSubject($model->subject)
+                    ->setHtmlBody($model->content)
+                    ->send();
+            }
 
+            $model->save();
+            return $this->redirect(['view', 'id' => $model->id]);
+        } else {
+            return $this->render('create', [
+                'model' => $model,
+            ]);
+        }
     }
 
     /**
-     * Updates an existing Branch model.
+     * Updates an existing Email model.
      * If update is successful, the browser will be redirected to the 'view' page.
      * @param integer $id
      * @return mixed
@@ -110,7 +128,7 @@ class BranchController extends Controller
         $model = $this->findModel($id);
 
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            return $this->redirect(['view', 'id' => $model->branch_id]);
+            return $this->redirect(['view', 'id' => $model->id]);
         } else {
             return $this->render('update', [
                 'model' => $model,
@@ -119,7 +137,7 @@ class BranchController extends Controller
     }
 
     /**
-     * Deletes an existing Branch model.
+     * Deletes an existing Email model.
      * If deletion is successful, the browser will be redirected to the 'index' page.
      * @param integer $id
      * @return mixed
@@ -129,25 +147,5 @@ class BranchController extends Controller
         $this->findModel($id)->delete();
 
         return $this->redirect(['index']);
-    }
-
-
-    public function actionLists($id)
-    {
-        $countBranches = Branch::find()
-            ->where(['company_id' => $id])
-            ->count();
-
-        $branches = Branch::find()
-            ->where(['company_id' => $id])
-            ->all();
-
-        if ($countBranches > 0) {
-            foreach ($branches as $branch) {
-                echo "<option value='" . $branch->branch_id."'>".$branch->branch_name."</option>";
-            }
-        } else {
-            echo "<option>-</option>";
-        }
     }
 }

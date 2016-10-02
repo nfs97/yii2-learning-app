@@ -23,6 +23,13 @@ $this->params['breadcrumbs'][] = $this->title;
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
         'filterModel' => $searchModel,
+        'rowOptions' => function ($model) {
+            if ($model->branch_status == 'inactive') {
+                return ['class' => 'danger'];
+            } else {
+                return ['class' => 'success'];
+            }
+        },
         'columns' => [
             ['class' => 'yii\grid\SerialColumn'],
             [
@@ -32,6 +39,7 @@ $this->params['breadcrumbs'][] = $this->title;
             'branch_name',
             'branch_address',
             'branch_create_date',
+            'branch_status',
 
             ['class' => 'yii\grid\ActionColumn'],
         ],
