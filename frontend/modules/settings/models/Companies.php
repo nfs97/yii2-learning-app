@@ -2,7 +2,6 @@
 
 namespace frontend\modules\settings\models;
 
-use Yii;
 use yii\db\ActiveRecord;
 
 /**
@@ -39,12 +38,22 @@ class Companies extends ActiveRecord
         return [
             [['company_name', 'company_email', 'company_address', 'company_start_date', 'company_status'], 'required'],
             [['company_start_date', 'comany_created_date'], 'safe'],
+            ['company_start_date', 'checkDate'],
             [['company_status'], 'string'],
             [['file'], 'file'],
             [['company_name', 'company_email'], 'string', 'max' => 100],
             [['logo'], 'string', 'max' => 200],
             [['company_address'], 'string', 'max' => 255],
         ];
+    }
+
+    public function checkDate($attribute, $params)
+    {
+        $today = date('Y-m-d');
+        $selectedDate = date($this->company_start_date);
+        if ($selectedDate > $today) {
+            $this->addError($attribute, 'Your company start date must be before today');
+        }
     }
 
     /**
