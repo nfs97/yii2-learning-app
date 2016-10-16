@@ -2,6 +2,7 @@
 
 namespace frontend\controllers;
 
+use frontend\models\Branch;
 use frontend\models\Companies;
 use frontend\models\CompaniesSearch;
 use Yii;
@@ -9,7 +10,6 @@ use yii\filters\VerbFilter;
 use yii\web\Controller;
 use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
-use yii\web\UploadedFile;
 
 /**
  * CompaniesController implements the CRUD actions for Companies model.
@@ -84,23 +84,34 @@ class CompaniesController extends Controller
     {
         if (Yii::$app->user->can('create-company')) {
             $model = new Companies();
+            $branch = new Branch();
 
-            if ($model->load(Yii::$app->request->post())) {
+
+            if ($model->load(Yii::$app->request->post()) && $branch->load(Yii::$app->request->post())) {
 
                 //get the image
                 $imageName = $model->company_name;
-                $model->file = UploadedFile::getInstance($model, 'file');
-                $model->file->saveAs('uploads/' . $imageName . '.' . $model->file->extension);
 
-                //save the path of image in DB
-                $model->logo = 'uploads/' . $imageName . '.' . $model->file->extension;
+                if (!empty($model->file)) {
+                    $model->file = UploadedFile::getInstance($model, 'file');
+                    $model->file->saveAs('uploads/' . $imageName . '.' . $model->file->extension);
+
+                    //save the path of image in DB
+                    $model->logo = 'uploads/' . $imageName . '.' . $model->file->extension;
+                }
 
                 $model->comany_created_date = date('Y-m-d h:m:s');
                 $model->save();
+
+                $branch->company_id = $model->company_id;
+                $branch->branch_create_date = date('Y-m-d H:m:s');
+                $branch->save();
+
                 return $this->redirect(['view', 'id' => $model->company_id]);
             } else {
                 return $this->render('create', [
                     'model' => $model,
+                    'branch' => $branch,
                 ]);
             }
         } else {
